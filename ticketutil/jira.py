@@ -104,20 +104,6 @@ class JiraTicket(ticket.Ticket):
                 logger.error(e)
             return self.request_result._replace(status='Failure', error_message=error_message)
 
-    def _verify_ticket_id(self, ticket_id):
-        """
-        Check if ticket_id is connected with valid ticket for the given JIRA instance.
-        :param ticket_id: The ticket you're verifying.
-        :return: True or False depending on if ticket is valid.
-        """
-        result = self.get_ticket_content(ticket_id)
-        if 'Failure' in result.status:
-            logger.error("Ticket {0} is not valid".format(ticket_id))
-            return False
-        logger.debug("Ticket {0} is valid".format(ticket_id))
-        self.ticket_id = ticket_id
-        return True
-
     def create(self, summary, description, type, **kwargs):
         """
         Creates a ticket.
@@ -515,6 +501,10 @@ def _prepare_ticket_fields(fields):
                 fields[key] = {'name': value}
             if key in ['parent']:
                 fields[key] = {'key': value}
+            if key in ['components']:
+                # we take in list of strings (names) and turn it into list of
+                # dicts with key "name" and value of the component name
+                fields[key] = [{"name": name} for name in fields[key]]
             if key == 'type':
                 fields['issuetype'] = {'name': value}
                 fields.pop('type')
